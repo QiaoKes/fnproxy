@@ -3,7 +3,7 @@ package proxy
 import (
 	"bytes"
 	"errors"
-	"fnproxy/pkg/compress"
+	"fnproxy/pkg/utils"
 	"io"
 	"net/http"
 	"strconv"
@@ -110,6 +110,12 @@ func (h *HeaderHelper) Del(key string) {
 // Get 获取header
 func (h *HeaderHelper) Get(key string) string {
 	return h.ctx.Request.Header.Get(key)
+}
+
+// Contains 检查header是否存在
+func (h *HeaderHelper) Contains(key string) bool {
+	val, ok := h.ctx.Request.Header[key]
+	return ok && len(val) > 0
 }
 
 // Filter 过滤header，只保留指定的header
@@ -256,8 +262,8 @@ func (r *ResponseHelper) SetResponseStatus(code int) {
 }
 
 func (h *ResponseHelper) SetJSONBodyWithEncoding(plain []byte, normalizedEnc string) error {
-	out, err := compress.Encode(plain, normalizedEnc)
-	if err != nil && !errors.Is(err, compress.ErrUnknownEncoding) {
+	out, err := utils.Encode(plain, normalizedEnc)
+	if err != nil && !errors.Is(err, utils.ErrUnknownEncoding) {
 		// 回压缩失败则降级明文
 		out = plain
 		normalizedEnc = ""

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"fnproxy/pkg/config"
 	"net/http"
@@ -49,7 +50,15 @@ func NewServer(cfg *config.Config, logger *zap.Logger) *Server {
 	}
 
 	engine := gin.New()
-	engine.Use(gin.Recovery())
+	engine.Use(gin.CustomRecovery(func(c *gin.Context, rec any) {
+		// 忽略 ReverseProxy 的控制流中止
+		if err, ok := rec.(error); ok && errors.Is(err, http.ErrAbortHandler) {
+			c.Abort()
+			return
+		}
+		// 其它 panic 仍按 500 处理
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}))
 
 	server := &Server{
 		config:   cfg,
@@ -78,6 +87,17 @@ func (s *Server) setupRoutes() {
 
 // handleRequest 处理请求
 func (s *Server) handleRequest(c *gin.Context) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			if err, ok := rec.(error); ok && errors.Is(err, http.ErrAbortHandler) {
+				// 局部静默，避免冒泡到上层中间件
+				return
+			}
+			// 非预期 panic 继续抛，让 ZeroNoiseRecovery 处理
+			panic(rec)
+		}
+	}()
+
 	path := c.Param("path")
 	if path == "" {
 		path = "/"
@@ -87,6 +107,9 @@ func (s *Server) handleRequest(c *gin.Context) {
 	ctx := NewContext(c)
 
 	method := c.Request.Method
+
+	// 判断是否视频流
+	isStreamLink := c.Request.Header.Get("Range") != ""
 
 	// 获取全局拦截器
 	globalInterceptors := s.registry.GetGlobalInterceptors()
@@ -124,7 +147,8 @@ func (s *Server) handleRequest(c *gin.Context) {
 		hasAfterResponse = true
 	}
 
-	if hasAfterResponse {
+	// 如果有响应后处理器且不是视频流，启用响应拦截
+	if hasAfterResponse && !isStreamLink {
 		ctx.EnableResponseIntercept()
 	}
 
@@ -137,7 +161,7 @@ func (s *Server) handleRequest(c *gin.Context) {
 	s.proxy.ServeHTTP(c.Writer, c.Request)
 
 	// 执行响应后处理
-	if hasAfterResponse {
+	if hasAfterResponse && !isStreamLink {
 		var interceptors []*Interceptor
 		interceptors = append(interceptors, globalInterceptors...)
 		interceptors = append(interceptors, interceptor)

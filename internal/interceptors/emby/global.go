@@ -23,8 +23,10 @@ func (ai *GlobalInterceptor) AuthIntercept(ctx *proxy.Context) proxy.Interceptor
 		zap.String("method", ctx.Method),
 		zap.String("original_host", ctx.Request.Host))
 
-	ctx.Headers.Set("X-Emby-Authorization", "Emby UserId=\"4917013c4fd44e71904d24a169b6ddd5\", Client=\"MyApp\", Device=\"MyDevice\", DeviceId=\"abcdef123456\", Version=\"1.0.0\"")
-	ctx.Headers.Set("X-Emby-Token", "80261cc7f7cc4d9ebc5d9c2deddbe35c")
+	if !ctx.Headers.Contains(EmbyAuthHeader) || !ctx.Headers.Contains(EmbyTokenHeader) {
+		ctx.Headers.Set(EmbyAuthHeader, GetCacheManager().GetAuthHeader())
+		ctx.Headers.Set(EmbyTokenHeader, GetCacheManager().GetToken())
+	}
 
 	logger.Info("Successfully modified Emby auth request")
 

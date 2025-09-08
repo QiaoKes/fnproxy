@@ -2,9 +2,9 @@ package emby
 
 import (
 	"encoding/json"
-	"fnproxy/pkg/compress"
 	"fnproxy/pkg/logger"
 	"fnproxy/pkg/proxy"
+	"fnproxy/pkg/utils"
 	"strings"
 
 	"go.uber.org/zap"
@@ -71,7 +71,7 @@ func (si *SystemInfoInterceptor) SystemInfoIntercept(ctx *proxy.Context) proxy.I
 		return proxy.Continue
 	}
 
-	plain, enc, _ := compress.Decode(body, ctx.Response.Header().Get("Content-Encoding"))
+	plain, enc, _ := utils.Decode(body, ctx.Response.Header().Get("Content-Encoding"))
 
 	// 用 rawBody 做 json.Unmarshal
 	var originalInfo OriginalSystemInfo

@@ -4,6 +4,11 @@ server:
 target:
   host: "10.0.0.115"
   port: 8005
+  https: false
+
+user:
+  username: "test"
+  password: "test"
 
 log:
   level: "info"

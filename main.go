@@ -16,6 +16,19 @@ func main() {
 		panic(fmt.Sprintf("Failed to load config: %v", err))
 	}
 
+	target := cfg.Target
+	var url string
+	if target.Https {
+		url = fmt.Sprintf("https://%s:%d", target.Host, target.Port)
+	} else {
+		url = fmt.Sprintf("http://%s:%d", target.Host, target.Port)
+	}
+
+	err = emby.InitCacheManager(url, cfg.User.Username, cfg.User.Password)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to init cache manager: %v", err))
+	}
+
 	// 初始化日志
 	var logger *zap.Logger
 	if cfg.Log.Level == "debug" {
