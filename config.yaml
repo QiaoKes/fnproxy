@@ -1,0 +1,14 @@
+server:
+  listen: "0.0.0.0:2345"
+
+target:
+  host: "10.0.0.115"
+  port: 8005
+
+log:
+  level: "info"
+
+timeout:
+  read: 30s
+  write: 30s
+  idle: 120s
