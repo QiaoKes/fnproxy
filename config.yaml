@@ -1,5 +1,5 @@
 server:
-  listen: "0.0.0.0:2345"
+  listen: "0.0.0.0:8005"
 
 target:
   host: "10.0.0.115"

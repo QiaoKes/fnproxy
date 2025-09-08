@@ -2,8 +2,11 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
+	"fnproxy/pkg/compress"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -252,9 +255,32 @@ func (r *ResponseHelper) SetResponseStatus(code int) {
 	}
 }
 
+func (h *ResponseHelper) SetJSONBodyWithEncoding(plain []byte, normalizedEnc string) error {
+	out, err := compress.Encode(plain, normalizedEnc)
+	if err != nil && !errors.Is(err, compress.ErrUnknownEncoding) {
+		// 回压缩失败则降级明文
+		out = plain
+		normalizedEnc = ""
+	}
+	h.SetResponseBody(out)
+
+	hd := h.ctx.Response.Header()
+	if hd.Get("Content-Type") == "" {
+		hd.Set("Content-Type", "application/json; charset=utf-8")
+	}
+	if normalizedEnc == "" {
+		hd.Del("Content-Encoding")
+	} else {
+		hd.Set("Content-Encoding", normalizedEnc)
+	}
+	hd.Set("Content-Length", strconv.Itoa(len(out)))
+	return nil
+}
+
 // Registry 拦截器注册表
 type Registry struct {
-	interceptors map[string]*Interceptor
+	interceptors       map[string]*Interceptor
+	globalInterceptors []*Interceptor
 }
 
 // makeKey 生成注册键，格式为 "METHOD:PATH"
@@ -324,6 +350,11 @@ func (r *Registry) GetAllInterceptors() map[string]*Interceptor {
 	return r.interceptors
 }
 
+// GetGlobalInterceptors 获取全局拦截器
+func (r *Registry) GetGlobalInterceptors() []*Interceptor {
+	return r.globalInterceptors
+}
+
 // HasPreRequest 检查是否有请求前处理器
 func (r *Registry) HasPreRequest(method, path string) bool {
 	interceptor := r.GetInterceptor(method, path)
@@ -354,6 +385,11 @@ func (r *Registry) RegisterAnyMethodAfterResponse(path string, afterResp AfterRe
 // RegisterAnyMethodBoth 为任何HTTP方法注册请求前和响应后处理器
 func (r *Registry) RegisterAnyMethodBoth(path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
 	r.RegisterBoth("*", path, preReq, afterResp)
+}
+
+// RegisterGlobalInterceptor 注册全局拦截器
+func (r *Registry) RegisterGlobalInterceptor(interceptor *Interceptor) {
+	r.globalInterceptors = append(r.globalInterceptors, interceptor)
 }
 
 // NewContext 创建拦截器上下文
@@ -401,3 +437,19 @@ func (ctx *Context) FlushResponse() {
 		}
 	}
 }
+
+// ReadFrom 重写
+func (w *ResponseInterceptor) ReadFrom(r io.Reader) (int64, error) {
+	if !w.written {
+		w.written = true
+	}
+	// 直接把上游数据读入缓冲区；不要写到底层原始 writer
+	return w.body.ReadFrom(r)
+}
+
+//// 可选：如果需要兼容某些 Flush 行为
+//func (w *ResponseInterceptor) Flush() {
+//	// 不立即向下游刷写，由 ctx.FlushResponse() 统一输出
+//	// 如需与某些中间件兼容，可选择性透传到底层：
+//	// if f, ok := w.ResponseWriter.(http.Flusher); ok { f.Flush() }
+//}

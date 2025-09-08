@@ -65,6 +65,11 @@ func NewServer(cfg *config.Config, logger *zap.Logger) *Server {
 	return server
 }
 
+// GetConfig 获取当前配置
+func (s *Server) GetConfig() *config.Config {
+	return s.config
+}
+
 // setupRoutes 设置路由
 func (s *Server) setupRoutes() {
 	// 捕获所有请求的通用处理器
@@ -83,13 +88,29 @@ func (s *Server) handleRequest(c *gin.Context) {
 
 	method := c.Request.Method
 
+	// 获取全局拦截器
+	globalInterceptors := s.registry.GetGlobalInterceptors()
+
 	// 检查是否有匹配的拦截器
 	interceptor := s.registry.GetInterceptor(method, path)
 	var hasAfterResponse bool
 
+	// 执行全局请求前拦截器
+	for _, globalInterceptor := range globalInterceptors {
+		if globalInterceptor.PreRequest != nil {
+			// 全局处理器不支持cancel
+			globalInterceptor.PreRequest(ctx)
+		}
+
+		if globalInterceptor.AfterResponse != nil {
+			hasAfterResponse = true
+		}
+	}
+
 	// 执行请求前拦截器
 	if interceptor != nil && interceptor.PreRequest != nil {
 		result := interceptor.PreRequest(ctx)
+
 		if result == Cancel {
 			s.logger.Info("Request intercepted and cancelled",
 				zap.String("path", path),
@@ -101,6 +122,9 @@ func (s *Server) handleRequest(c *gin.Context) {
 	// 检查是否有响应后处理器
 	if interceptor != nil && interceptor.AfterResponse != nil {
 		hasAfterResponse = true
+	}
+
+	if hasAfterResponse {
 		ctx.EnableResponseIntercept()
 	}
 
@@ -114,7 +138,10 @@ func (s *Server) handleRequest(c *gin.Context) {
 
 	// 执行响应后处理
 	if hasAfterResponse {
-		s.processResponse(ctx, interceptor)
+		var interceptors []*Interceptor
+		interceptors = append(interceptors, globalInterceptors...)
+		interceptors = append(interceptors, interceptor)
+		s.processResponse(ctx, interceptors)
 	}
 }
 
@@ -135,16 +162,16 @@ func (s *Server) shouldIntercept(requestPath, registeredPath string) bool {
 }
 
 // processResponse 处理响应
-func (s *Server) processResponse(ctx *Context, interceptor *Interceptor) {
+func (s *Server) processResponse(ctx *Context, interceptors []*Interceptor) {
 	s.logger.Info("Processing response",
 		zap.String("path", ctx.Path),
 		zap.Int("response_size", len(ctx.ResponseHelper.GetResponseBody())))
 
-	// 执行响应后处理器
-	if interceptor.AfterResponse != nil {
-		interceptor.AfterResponse(ctx)
+	for _, interceptor := range interceptors {
+		if interceptor.AfterResponse != nil {
+			interceptor.AfterResponse(ctx)
+		}
 	}
-
 	// 刷新响应到客户端
 	ctx.FlushResponse()
 }
@@ -171,6 +198,16 @@ func (s *Server) RegisterAfterResponse(method, path string, afterResp AfterRespo
 func (s *Server) RegisterBoth(method, path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
 	s.registry.RegisterBoth(method, path, preReq, afterResp)
 	s.logger.Info("Registered both pre-request and after-response interceptors", zap.String("path", path))
+}
+
+// RegisterGlobalBoth 注册全局请求处理器
+func (s *Server) RegisterGlobalBoth(preReq PreRequestFunc, afterResp AfterResponseFunc) {
+	interceptor := &Interceptor{
+		PreRequest:    preReq,
+		AfterResponse: afterResp,
+	}
+	s.registry.RegisterGlobalInterceptor(interceptor)
+	s.logger.Info("Registered global interceptor")
 }
 
 // Start 启动服务器
