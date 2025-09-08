@@ -7,10 +7,9 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig  `destructure:"server"`
-	Target  TargetConfig  `destructure:"target"`
-	Log     LogConfig     `destructure:"log"`
-	Timeout TimeoutConfig `destructure:"timeout"`
+	Server ServerConfig `destructure:"server"`
+	Target TargetConfig `destructure:"target"`
+	Log    LogConfig    `destructure:"log"`
 }
 
 type ServerConfig struct {

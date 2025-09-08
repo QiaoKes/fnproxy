@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"fmt"
-	"fnproxy/internal/common/config"
+	"fnproxy/pkg/config"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -81,8 +81,10 @@ func (s *Server) handleRequest(c *gin.Context) {
 	// 创建拦截器上下文
 	ctx := NewContext(c)
 
+	method := c.Request.Method
+
 	// 检查是否有匹配的拦截器
-	interceptor := s.registry.GetInterceptor(path)
+	interceptor := s.registry.GetInterceptor(method, path)
 	var hasAfterResponse bool
 
 	// 执行请求前拦截器
@@ -148,26 +150,26 @@ func (s *Server) processResponse(ctx *Context, interceptor *Interceptor) {
 }
 
 // Register 注册完整拦截器
-func (s *Server) Register(path string, interceptor *Interceptor) {
-	s.registry.Register(path, interceptor)
+func (s *Server) Register(method, path string, interceptor *Interceptor) {
+	s.registry.Register(method, path, interceptor)
 	s.logger.Info("Registered interceptor", zap.String("path", path))
 }
 
 // RegisterPreRequest 注册请求前处理器
-func (s *Server) RegisterPreRequest(path string, preReq PreRequestFunc) {
-	s.registry.RegisterPreRequest(path, preReq)
+func (s *Server) RegisterPreRequest(method, path string, preReq PreRequestFunc) {
+	s.registry.RegisterPreRequest(method, path, preReq)
 	s.logger.Info("Registered pre-request interceptor", zap.String("path", path))
 }
 
 // RegisterAfterResponse 注册响应后处理器
-func (s *Server) RegisterAfterResponse(path string, afterResp AfterResponseFunc) {
-	s.registry.RegisterAfterResponse(path, afterResp)
+func (s *Server) RegisterAfterResponse(method, path string, afterResp AfterResponseFunc) {
+	s.registry.RegisterAfterResponse(method, path, afterResp)
 	s.logger.Info("Registered after-response interceptor", zap.String("path", path))
 }
 
 // RegisterBoth 注册请求前和响应后处理器
-func (s *Server) RegisterBoth(path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
-	s.registry.RegisterBoth(path, preReq, afterResp)
+func (s *Server) RegisterBoth(method, path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
+	s.registry.RegisterBoth(method, path, preReq, afterResp)
 	s.logger.Info("Registered both pre-request and after-response interceptors", zap.String("path", path))
 }
 

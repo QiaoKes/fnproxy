@@ -7,8 +7,3 @@ target:
 
 log:
   level: "info"
-
-timeout:
-  read: 30s
-  write: 30s
-  idle: 120s

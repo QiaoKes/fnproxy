@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"fnproxy/internal/common/config"
+	"fnproxy/internal/interceptors/emby"
+	"fnproxy/pkg/config"
 	"fnproxy/pkg/proxy"
 
 	"go.uber.org/zap"
@@ -31,7 +32,7 @@ func main() {
 	//api.RegisterAPIs(server)
 
 	// 注册Emby拦截器
-	//emby.RegisterInterceptors(server, logger, cfg.Target.Host, cfg.Target.Port)
+	emby.RegisterInterceptors(server)
 
 	// 注册示例拦截器（可选，用于演示）
 	//examples.RegisterExampleInterceptors(server, logger)

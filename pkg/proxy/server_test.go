@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"fmt"
-	"fnproxy/internal/common/config"
+	"fnproxy/pkg/config"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -63,7 +63,7 @@ func TestServer_PreRequestCancel(t *testing.T) {
 	srv := NewServer(cfg, zap.NewNop())
 
 	// 注册一个在请求前直接取消并返回 403 的拦截器
-	srv.RegisterPreRequest("/cancel", func(ctx *Context) InterceptorResult {
+	srv.RegisterPreRequest("GET", "/cancel", func(ctx *Context) InterceptorResult {
 		ctx.ResponseHelper.SetStringWithStatus(403, "blocked")
 		return Cancel
 	})
@@ -119,7 +119,7 @@ func TestServer_AfterResponseModify(t *testing.T) {
 	srv := NewServer(cfg, zap.NewNop())
 
 	// 注册响应后处理器，修改响应体
-	srv.RegisterAfterResponse("/modify", func(ctx *Context) InterceptorResult {
+	srv.RegisterAfterResponse("PATCH", "/modify", func(ctx *Context) InterceptorResult {
 		// 读取原始响应体
 		orig := ctx.ResponseHelper.GetResponseBody()
 		_ = orig // for clarity
@@ -178,7 +178,7 @@ func TestServer_PreRequestModifyHeadersAndBody(t *testing.T) {
 
 	srv := NewServer(cfg, zap.NewNop())
 
-	srv.RegisterPreRequest("/premodify", func(ctx *Context) InterceptorResult {
+	srv.RegisterPreRequest("PATCH", "/premodify", func(ctx *Context) InterceptorResult {
 		// 修改请求头与请求体
 		ctx.Headers.Set("X-Injected", "yes")
 		ctx.RequestHelper.SetBody([]byte("replaced"))
@@ -236,7 +236,7 @@ func TestServer_AfterResponseModifyHeadersAndBody(t *testing.T) {
 
 	srv := NewServer(cfg, zap.NewNop())
 
-	srv.RegisterAfterResponse("/aftermodify", func(ctx *Context) InterceptorResult {
+	srv.RegisterAfterResponse("PATCH", "/aftermodify", func(ctx *Context) InterceptorResult {
 		// 读取并修改响应头与体
 		origBody := ctx.ResponseHelper.GetResponseBody()
 		_ = origBody

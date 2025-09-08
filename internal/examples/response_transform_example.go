@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"fnproxy/internal/api"
-	"fnproxy/internal/common/config"
+	"fnproxy/pkg/config"
 	proxy2 "fnproxy/pkg/proxy"
 	"strings"
 	"time"
