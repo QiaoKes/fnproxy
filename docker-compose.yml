@@ -9,10 +9,10 @@ services:
     network_mode: host
     environment:
       - SERVER_LISTEN=0.0.0.0:2345
-      - TARGET_HOST=127.0.0.1
+      - TARGET_HOST=localhost
       - TARGET_PORT=8005
       - TARGET_HTTPS=false
-      - USER_USERNAME=test
-      - USER_PASSWORD=test
+      - USER_USERNAME=
+      - USER_PASSWORD=
       - LOG_LEVEL=info
     restart: unless-stopped

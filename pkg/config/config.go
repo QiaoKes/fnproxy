@@ -53,6 +53,15 @@ func Load() (*Config, error) {
 	viper.BindEnv("user.password", "USER_PASSWORD")
 	viper.BindEnv("log.level", "LOG_LEVEL")
 
+	// 设置默认值
+	viper.SetDefault("server.listen", "0.0.0.0:2345")
+	viper.SetDefault("target.host", "10.0.0.115")
+	viper.SetDefault("target.port", 8005)
+	viper.SetDefault("target.https", false)
+	viper.SetDefault("user.username", "")
+	viper.SetDefault("user.password", "")
+	viper.SetDefault("log.level", "info")
+
 	if err := viper.ReadInConfig(); err != nil {
 		logger.Errorf("Error reading config file, %s", err)
 		return nil, err
