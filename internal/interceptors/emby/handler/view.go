@@ -32,20 +32,10 @@ func (pi *PageViewInterceptor) ViewIntercept(ctx *proxy.Context) proxy.Intercept
 func (pi *PageViewInterceptor) ArtPictureIntercept(ctx *proxy.Context) proxy.InterceptorResult {
 	logger.Infof("Intercepting Emby art picture request before, path:%s, args:%s method:%s", utils.JsonPrint(ctx.Path), ctx.RequestHelper.GetQuery(), ctx.Method)
 
-	originalPath := ctx.Path
-	logger.Infof("Original path: %s", originalPath)
-	logger.Infof("Original Request.URL.Path: %s", ctx.Request.URL.Path)
-
 	path := ctx.Path
 	path = strings.Replace(path, "Backdrop/0", "Primary", 1)
-	logger.Infof("Modified path: %s", path)
 
 	ctx.RequestHelper.SetPath(path)
-
-	logger.Infof("After SetPath - ctx.Path: %s", ctx.Path)
-	logger.Infof("After SetPath - ctx.Request.URL.Path: %s", ctx.Request.URL.Path)
-	logger.Infof("Path change detected: %t", originalPath != ctx.Path)
-
-	logger.Infof("Successfully modified Emby art picture request, path changed:%s", ctx.Path)
+	logger.Info("Successfully modified Emby art picture request")
 	return proxy.Continue
 }

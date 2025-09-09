@@ -9,7 +9,12 @@ import (
 // RegisterAPIs 注册所有自定义API
 func RegisterAPIs(server *proxy.Server) {
 	// 用户相关API
-	server.Register(http.MethodGet, handler.SimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.ItemSimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.ArtistsSimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.MoviesSimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.AlbumsSimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.ShowsSimilarPath, handler.GetSimilar)
+	server.Register(http.MethodGet, handler.TrailersSimilarPath, handler.GetSimilar)
 }
 
 //// handleUsers 处理用户列表API
