@@ -36,6 +36,9 @@ ENV LOG_LEVEL="info"
 # Copy the binary from builder
 COPY --from=builder /app/fnproxy /fnproxy
 
+# Copy the config file
+COPY --from=builder /app/config.yaml /config.yaml
+
 # Expose port
 EXPOSE 2345
 
