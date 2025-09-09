@@ -3,7 +3,9 @@ package handler
 import (
 	"fnproxy/internal/interceptors/emby/cache"
 	"fnproxy/internal/interceptors/emby/common"
+	"fnproxy/pkg/logger"
 	"fnproxy/pkg/proxy"
+	"net/http"
 )
 
 // GlobalInterceptor 全局拦截器
@@ -15,8 +17,8 @@ func NewGlobalInterceptor() *GlobalInterceptor {
 	return &GlobalInterceptor{}
 }
 
-// Intercept 拦截全局请求
-func (ai *GlobalInterceptor) Intercept(ctx *proxy.Context) proxy.InterceptorResult {
+// ReqIntercept 拦截全局请求
+func (ai *GlobalInterceptor) ReqIntercept(ctx *proxy.Context) proxy.InterceptorResult {
 	// 记录请求信息
 	//logger.Info("Intercepting Emby global request",
 	//	zap.String("path", ctx.Path),
@@ -29,6 +31,15 @@ func (ai *GlobalInterceptor) Intercept(ctx *proxy.Context) proxy.InterceptorResu
 	}
 
 	//logger.Info("Successfully modified Emby global request")
+
+	return proxy.Continue
+}
+
+func (ai *GlobalInterceptor) RespIntercept(ctx *proxy.Context) proxy.InterceptorResult {
+	if ctx.ResponseHelper.GetResponseStatus() == http.StatusUnauthorized {
+		logger.Infof("Emby auth failed, status code: %d, refreshing token", ctx.ResponseHelper.GetResponseStatus())
+		_ = cache.GetCacheManager().RefreshToken()
+	}
 
 	return proxy.Continue
 }

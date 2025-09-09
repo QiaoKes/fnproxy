@@ -10,7 +10,7 @@ import (
 // RegisterInterceptors 注册所有Emby相关的拦截器
 func RegisterInterceptors(server *proxy.Server) {
 	// 全局拦截器
-	server.RegisterGlobalBoth(handler.NewGlobalInterceptor().Intercept, nil)
+	server.RegisterGlobalBoth(handler.NewGlobalInterceptor().ReqIntercept, handler.NewGlobalInterceptor().RespIntercept)
 
 	// 认证相关
 	server.RegisterPreRequest(http.MethodPost, common.EmbyAuthPath, handler.NewAuthInterceptor().Intercept)

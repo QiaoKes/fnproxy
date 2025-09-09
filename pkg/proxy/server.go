@@ -160,7 +160,9 @@ func (s *Server) handleRequest(c *gin.Context) {
 	if hasAfterResponse && !isStreamLink {
 		var interceptors []*Interceptor
 		interceptors = append(interceptors, globalInterceptors...)
-		interceptors = append(interceptors, interceptor)
+		if interceptor != nil {
+			interceptors = append(interceptors, interceptor)
+		}
 		s.processResponse(ctx, interceptors)
 	}
 }

@@ -5,14 +5,16 @@ import (
 	"fnproxy/internal/interceptors/emby/common"
 	"fnproxy/pkg/logger"
 	"fnproxy/pkg/utils"
+	"sync"
 )
 
-// todo: 缓存要过期支持，否则无法长期使用
 type UserCacheManager struct {
+	url      string
 	username string
 	password string
-	user     *common.UserInfo
-	device   *common.DeviceInfo
+	user     common.UserInfo
+	device   common.DeviceInfo
+	lock     sync.RWMutex
 }
 
 var userCache *UserCacheManager
@@ -26,21 +28,14 @@ func InitCacheManager(url string, username, password string) error {
 		Version:  "1.0.0",
 	}
 
-	api := common.NewFnApi(url)
-	resp, err := api.Login(username, password, device)
-	if err != nil {
-		logger.Errorf("Failed to login: %v", err)
-		return err
-	}
-
 	userCache = &UserCacheManager{
+		url:      url,
 		username: username,
 		password: password,
-		device:   &device,
-		user:     resp,
+		device:   device,
 	}
 
-	return nil
+	return userCache.RefreshToken()
 }
 
 // GetCacheManager 获取用户缓存管理器
@@ -50,11 +45,33 @@ func GetCacheManager() *UserCacheManager {
 
 // GetAuthHeader 获取认证头
 func (cm *UserCacheManager) GetAuthHeader() string {
+	cm.lock.RLock()
+	defer cm.lock.RUnlock()
 	return fmt.Sprintf(`Emby UserId="%s", Client="%s", Device="%s", DeviceId="%s", Version="%s"`,
 		cm.user.UserId, cm.device.Client, cm.device.Device, cm.device.DeviceId, cm.device.Version)
 }
 
 // GetToken 获取用户Token
 func (cm *UserCacheManager) GetToken() string {
+	cm.lock.RLock()
+	defer cm.lock.RUnlock()
 	return cm.user.Token
+}
+
+// RefreshToken 刷新用户Token
+func (cm *UserCacheManager) RefreshToken() error {
+	cm.lock.Lock()
+	defer cm.lock.Unlock()
+
+	api := common.NewFnApi(cm.url)
+	resp, err := api.Login(cm.username, cm.password, cm.device)
+	if err != nil {
+		logger.Errorf("Failed to login: %v", err)
+		return err
+	}
+
+	cm.user = *resp
+
+	logger.Infof("Successfully refreshed token for user %s", cm.username)
+	return nil
 }

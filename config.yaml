@@ -8,7 +8,7 @@ target:
 
 user:
   username: "test"
-  password: "test123456"
+  password: "test123"
 
 log:
   level: 1

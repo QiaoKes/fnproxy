@@ -1,16 +1,20 @@
 package common
 
 const (
-	EmbyAuthPath        = "/emby/Users/AuthenticateByName"
-	SystemInfoPath      = "/emby/System/Info"
-	PageViewPath        = "/emby/Users/:userid/Items"
-	ArtPicturePath      = "/emby/Items/:itemid/Images/Backdrop/:index" // + ?maxWidth=xxx&maxHeight=xxx&tag=xxx
-	ItemSimilarPath     = "/emby/Items/:itemid/Similar"                // 相似影视
+	EmbyAuthPath   = "/emby/Users/AuthenticateByName"
+	SystemInfoPath = "/emby/System/Info"
+
+	PageViewPath   = "/emby/Users/:userid/Items"
+	ArtPicturePath = "/emby/Items/:itemid/Images/Backdrop/:index" // + ?maxWidth=xxx&maxHeight=xxx&tag=xxx
+
+	ItemSimilarPath     = "/emby/Items/:itemid/Similar" // 相似影视
 	AlbumsSimilarPath   = "/emby/Albums/:itemid/Similar"
 	ArtistsSimilarPath  = "/emby/Artists/:itemid/Similar"
 	MoviesSimilarPath   = "/emby/Movies/:itemid/Similar"
 	ShowsSimilarPath    = "/emby/Shows/:itemid/Similar"
 	TrailersSimilarPath = "/emby/Trailers/:itemid/Similar"
+
+	UserItemsPath = "/emby/Users/:userid/Items/:itemid" // 用户影视列表
 )
 
 const (
