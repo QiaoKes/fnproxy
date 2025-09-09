@@ -32,6 +32,11 @@ func (r *RequestHelper) GetBody() ([]byte, error) {
 	return body, nil
 }
 
+// GetQuery 获取查询参数
+func (r *RequestHelper) GetQuery() string {
+	return r.ctx.Request.URL.RawQuery
+}
+
 // SetQuery 设置查询参数
 func (r *RequestHelper) SetQuery(key, value string) {
 	q := r.ctx.Request.URL.Query()

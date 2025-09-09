@@ -1,20 +1,25 @@
 package proxy
 
+import "strings"
+
 // Registry 拦截器注册表
 type Registry struct {
 	interceptors       map[string]*Interceptor
 	globalInterceptors []*Interceptor
+	matcher            *HRMatcher
 }
 
 // makeKey 生成注册键，格式为 "METHOD:PATH"
 func (r *Registry) makeKey(method, path string) string {
-	return method + ":" + path
+	return strings.ToUpper(strings.TrimSpace(method)) + ":" + path
 }
 
 // NewRegistry 创建新的注册表
 func NewRegistry() *Registry {
 	return &Registry{
-		interceptors: make(map[string]*Interceptor),
+		interceptors:       make(map[string]*Interceptor),
+		globalInterceptors: make([]*Interceptor, 0),
+		matcher:            NewHRMatcher(),
 	}
 }
 
@@ -31,6 +36,7 @@ func (r *Registry) RegisterPreRequest(method, path string, preReq PreRequestFunc
 		r.interceptors[key] = &Interceptor{}
 	}
 	r.interceptors[key].PreRequest = preReq
+	r.matcher.Register(method, path)
 }
 
 // RegisterAfterResponse 只注册响应后处理器
@@ -40,6 +46,7 @@ func (r *Registry) RegisterAfterResponse(method, path string, afterResp AfterRes
 		r.interceptors[key] = &Interceptor{}
 	}
 	r.interceptors[key].AfterResponse = afterResp
+	r.matcher.Register(method, path)
 }
 
 // RegisterBoth 注册请求前和响应后处理器
@@ -49,22 +56,35 @@ func (r *Registry) RegisterBoth(method, path string, preReq PreRequestFunc, afte
 		PreRequest:    preReq,
 		AfterResponse: afterResp,
 	}
+	r.matcher.Register(method, path)
 }
 
-// GetInterceptor 获取路径和方法对应的拦截器
+// GetInterceptor 获取路径和方法对应的拦截器（支持 :param/*any 路径模式）
 func (r *Registry) GetInterceptor(method, path string) *Interceptor {
-	// 首先尝试精确匹配
-	key := r.makeKey(method, path)
-	if interceptor := r.interceptors[key]; interceptor != nil {
-		return interceptor
+	method = strings.ToUpper(strings.TrimSpace(method))
+
+	// 1) 精确匹配：METHOD:/exact/path
+	if ic := r.interceptors[r.makeKey(method, path)]; ic != nil {
+		return ic
+	}
+	// 2) 通配方法 + 精确路径：*:/exact/path
+	if ic := r.interceptors[r.makeKey("*", path)]; ic != nil {
+		return ic
 	}
 
-	// 尝试通配符方法匹配（*:PATH）
-	wildcardKey := r.makeKey("*", path)
-	if interceptor := r.interceptors[wildcardKey]; interceptor != nil {
-		return interceptor
+	// 3) 用 httprouter 解析路径，拿到“命中的模式字符串”
+	if r.matcher != nil {
+		if pat, ok := r.matcher.Lookup(method, path); ok {
+			// 3.1 同方法 + 模式
+			if ic := r.interceptors[r.makeKey(method, pat)]; ic != nil {
+				return ic
+			}
+			// 3.2 通配方法 + 模式
+			if ic := r.interceptors[r.makeKey("*", pat)]; ic != nil {
+				return ic
+			}
+		}
 	}
-
 	return nil
 }
 

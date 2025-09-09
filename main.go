@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"fnproxy/internal/api"
 	"fnproxy/internal/interceptors/emby"
+	"fnproxy/internal/interceptors/emby/handler"
 	"fnproxy/pkg/config"
 	"fnproxy/pkg/proxy"
 
@@ -42,10 +44,10 @@ func main() {
 	server := proxy.NewServer(cfg, logger)
 
 	// 注册自定义API（不转发）
-	//api.RegisterAPIs(server)
+	api.RegisterAPIs(server)
 
 	// 注册Emby拦截器
-	emby.RegisterInterceptors(server)
+	handler.RegisterInterceptors(server)
 
 	// 注册示例拦截器（可选，用于演示）
 	//examples.RegisterExampleInterceptors(server, logger)

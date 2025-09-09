@@ -1,9 +1,10 @@
-package emby
+package handler
 
 import (
 	"fmt"
 	"fnproxy/pkg/logger"
 	"fnproxy/pkg/proxy"
+	"fnproxy/pkg/utils"
 	"strings"
 
 	"go.uber.org/zap"
@@ -34,13 +35,10 @@ type AuthorizationHeader struct {
 	UserId   string
 }
 
-// AuthIntercept 拦截Emby认证请求
-func (ai *AuthInterceptor) AuthIntercept(ctx *proxy.Context) proxy.InterceptorResult {
+// Intercept 拦截Emby认证请求
+func (ai *AuthInterceptor) Intercept(ctx *proxy.Context) proxy.InterceptorResult {
 	// 记录请求信息
-	logger.Info("Intercepting Emby auth request",
-		zap.String("path", ctx.Path),
-		zap.String("method", ctx.Method),
-		zap.String("original_host", ctx.Request.Host))
+	logger.Infof("Intercepting Emby auth request before, path:%s, method:%s, original_host:%s", utils.JsonPrint(ctx.Path), ctx.Method, ctx.Request.Host)
 
 	// 解析并修改认证头
 	if err := ai.modifyAuthHeader(ctx); err != nil {

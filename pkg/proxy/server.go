@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"fnproxy/pkg/config"
+	"fnproxy/pkg/logger"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -115,7 +116,7 @@ func (s *Server) handleRequest(c *gin.Context) {
 	globalInterceptors := s.registry.GetGlobalInterceptors()
 
 	// 检查是否有匹配的拦截器
-	interceptor := s.registry.GetInterceptor(method, path)
+	interceptor := s.registry.GetInterceptor(method, ctx.Path)
 	var hasAfterResponse bool
 
 	// 执行全局请求前拦截器
@@ -135,7 +136,7 @@ func (s *Server) handleRequest(c *gin.Context) {
 		result := interceptor.PreRequest(ctx)
 
 		if result == Cancel {
-			s.logger.Info("Request intercepted and cancelled",
+			logger.Info("Request intercepted and cancelled",
 				zap.String("path", path),
 				zap.String("method", c.Request.Method))
 			return
@@ -153,12 +154,9 @@ func (s *Server) handleRequest(c *gin.Context) {
 	}
 
 	// 没有拦截器或继续执行，进行透明转发
-	s.logger.Info("Proxying request",
-		zap.String("path", path),
-		zap.String("method", c.Request.Method),
-		zap.String("target", fmt.Sprintf("%s:%d", s.config.Target.Host, s.config.Target.Port)))
+	logger.Debugf("Proxying request path:%s, args:%s method:%s", path, ctx.RequestHelper.GetQuery(), ctx.Method)
 
-	s.proxy.ServeHTTP(c.Writer, c.Request)
+	s.proxy.ServeHTTP(c.Writer, ctx.Request)
 
 	// 执行响应后处理
 	if hasAfterResponse && !isStreamLink {
@@ -187,7 +185,7 @@ func (s *Server) shouldIntercept(requestPath, registeredPath string) bool {
 
 // processResponse 处理响应
 func (s *Server) processResponse(ctx *Context, interceptors []*Interceptor) {
-	s.logger.Info("Processing response",
+	logger.Info("Processing response",
 		zap.String("path", ctx.Path),
 		zap.Int("response_size", len(ctx.ResponseHelper.GetResponseBody())))
 
@@ -200,28 +198,28 @@ func (s *Server) processResponse(ctx *Context, interceptors []*Interceptor) {
 	ctx.FlushResponse()
 }
 
-// Register 注册完整拦截器
-func (s *Server) Register(method, path string, interceptor *Interceptor) {
-	s.registry.Register(method, path, interceptor)
-	s.logger.Info("Registered interceptor", zap.String("path", path))
+// Register 注册路由
+func (s *Server) Register(method, path string, callback PreRequestFunc) {
+	s.registry.RegisterPreRequest(method, path, callback)
+	logger.Infof("Registered router:%s", path)
 }
 
 // RegisterPreRequest 注册请求前处理器
 func (s *Server) RegisterPreRequest(method, path string, preReq PreRequestFunc) {
 	s.registry.RegisterPreRequest(method, path, preReq)
-	s.logger.Info("Registered pre-request interceptor", zap.String("path", path))
+	logger.Info("Registered pre-request interceptor", zap.String("path", path))
 }
 
 // RegisterAfterResponse 注册响应后处理器
 func (s *Server) RegisterAfterResponse(method, path string, afterResp AfterResponseFunc) {
 	s.registry.RegisterAfterResponse(method, path, afterResp)
-	s.logger.Info("Registered after-response interceptor", zap.String("path", path))
+	logger.Info("Registered after-response interceptor", zap.String("path", path))
 }
 
 // RegisterBoth 注册请求前和响应后处理器
 func (s *Server) RegisterBoth(method, path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
 	s.registry.RegisterBoth(method, path, preReq, afterResp)
-	s.logger.Info("Registered both pre-request and after-response interceptors", zap.String("path", path))
+	logger.Info("Registered both pre-request and after-response interceptors", zap.String("path", path))
 }
 
 // RegisterGlobalBoth 注册全局请求处理器
@@ -231,12 +229,12 @@ func (s *Server) RegisterGlobalBoth(preReq PreRequestFunc, afterResp AfterRespon
 		AfterResponse: afterResp,
 	}
 	s.registry.RegisterGlobalInterceptor(interceptor)
-	s.logger.Info("Registered global interceptor")
+	logger.Info("Registered global interceptor")
 }
 
 // Start 启动服务器
 func (s *Server) Start() error {
-	s.logger.Info("Starting proxy server",
+	logger.Info("Starting proxy server",
 		zap.String("listen", s.config.Server.Listen),
 		zap.String("target", fmt.Sprintf("%s:%d", s.config.Target.Host, s.config.Target.Port)))
 

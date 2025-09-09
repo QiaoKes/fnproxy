@@ -1,4 +1,4 @@
-package emby
+package handler
 
 import (
 	"encoding/json"

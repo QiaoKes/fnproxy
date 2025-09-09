@@ -2,9 +2,11 @@ package emby
 
 import (
 	"fmt"
+	"fnproxy/pkg/logger"
 	"fnproxy/pkg/utils"
 )
 
+// todo: 缓存要过期支持，否则无法长期使用
 type UserCacheManager struct {
 	username string
 	password string
@@ -26,6 +28,7 @@ func InitCacheManager(url string, username, password string) error {
 	api := NewFnApi(url)
 	resp, err := api.Login(username, password, device)
 	if err != nil {
+		logger.Errorf("Failed to login: %v", err)
 		return err
 	}
 

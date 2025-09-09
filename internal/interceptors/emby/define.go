@@ -3,6 +3,8 @@ package emby
 const (
 	EmbyAuthPath   = "/emby/Users/AuthenticateByName"
 	SystemInfoPath = "/emby/System/Info"
+	PageViewPath   = "/emby/Users/:userid/Items"
+	ArtPicturePath = "/emby/Items/:itemid/Images/Backdrop/:index" // + ?maxWidth=xxx&maxHeight=xxx&tag=xxx
 )
 
 const (
