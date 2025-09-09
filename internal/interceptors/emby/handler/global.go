@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"fnproxy/internal/interceptors/emby"
+	"fnproxy/internal/interceptors/emby/cache"
+	"fnproxy/internal/interceptors/emby/common"
 	"fnproxy/pkg/proxy"
 )
 
@@ -22,9 +23,9 @@ func (ai *GlobalInterceptor) Intercept(ctx *proxy.Context) proxy.InterceptorResu
 	//	zap.String("method", ctx.Method),
 	//	zap.String("original_host", ctx.Request.Host))
 
-	if !ctx.Headers.Contains(emby.EmbyAuthHeader) || !ctx.Headers.Contains(emby.EmbyTokenHeader) {
-		ctx.Headers.Set(emby.EmbyAuthHeader, emby.GetCacheManager().GetAuthHeader())
-		ctx.Headers.Set(emby.EmbyTokenHeader, emby.GetCacheManager().GetToken())
+	if !ctx.Headers.Contains(common.EmbyAuthHeader) || !ctx.Headers.Contains(common.EmbyTokenHeader) {
+		ctx.Headers.Set(common.EmbyAuthHeader, cache.GetCacheManager().GetAuthHeader())
+		ctx.Headers.Set(common.EmbyTokenHeader, cache.GetCacheManager().GetToken())
 	}
 
 	//logger.Info("Successfully modified Emby global request")

@@ -1,7 +1,8 @@
-package emby
+package cache
 
 import (
 	"fmt"
+	"fnproxy/internal/interceptors/emby/common"
 	"fnproxy/pkg/logger"
 	"fnproxy/pkg/utils"
 )
@@ -10,22 +11,22 @@ import (
 type UserCacheManager struct {
 	username string
 	password string
-	user     *UserInfo
-	device   *DeviceInfo
+	user     *common.UserInfo
+	device   *common.DeviceInfo
 }
 
 var userCache *UserCacheManager
 
 // InitCacheManager 初始化用户缓存管理器
 func InitCacheManager(url string, username, password string) error {
-	device := DeviceInfo{
+	device := common.DeviceInfo{
 		Client:   "Yamby",
 		Device:   "HUAWEI-HBP-AL00",
 		DeviceId: utils.GenerateDeviceID(username),
 		Version:  "1.0.0",
 	}
 
-	api := NewFnApi(url)
+	api := common.NewFnApi(url)
 	resp, err := api.Login(username, password, device)
 	if err != nil {
 		logger.Errorf("Failed to login: %v", err)

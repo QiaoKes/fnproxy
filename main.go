@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"fnproxy/internal/api"
-	"fnproxy/internal/interceptors/emby"
+	"fnproxy/internal/interceptors/emby/cache"
 	"fnproxy/internal/interceptors/emby/handler"
 	"fnproxy/pkg/config"
+	"fnproxy/pkg/logger"
 	"fnproxy/pkg/proxy"
 
 	"go.uber.org/zap"
@@ -26,22 +27,15 @@ func main() {
 		url = fmt.Sprintf("http://%s:%d", target.Host, target.Port)
 	}
 
-	err = emby.InitCacheManager(url, cfg.User.Username, cfg.User.Password)
+	err = cache.InitCacheManager(url, cfg.User.Username, cfg.User.Password)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to init cache manager: %v", err))
 	}
 
-	// 初始化日志
-	var logger *zap.Logger
-	if cfg.Log.Level == "debug" {
-		logger, _ = zap.NewDevelopment()
-	} else {
-		logger, _ = zap.NewProduction()
-	}
-	defer logger.Sync()
+	logger.SetLevel(logger.LogLevel(cfg.Log.Level))
 
 	// 创建代理服务器
-	server := proxy.NewServer(cfg, logger)
+	server := proxy.NewServer(cfg)
 
 	// 注册自定义API（不转发）
 	api.RegisterAPIs(server)

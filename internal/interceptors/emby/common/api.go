@@ -1,4 +1,4 @@
-package emby
+package common
 
 import (
 	"bytes"
@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"fnproxy/pkg/logger"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // FnApi 飞牛api - emby
@@ -24,12 +25,12 @@ func NewFnApi(url string) *FnApi {
 }
 
 // Login 会向指定 Emby 服务的 AuthenticateByName 接口发起请求
-func (api *FnApi) Login(username, password string, device DeviceInfo) (*UserInfo, error) {
+func (api *FnApi) Login(username, password string, device cache.DeviceInfo) (*cache.UserInfo, error) {
 	// 拼接 URL
 	url := fmt.Sprintf("%s%s", api.url, EmbyAuthPath)
 
 	// 请求体
-	reqBody := LoginReq{
+	reqBody := cache.LoginReq{
 		Username: username,
 		Pw:       password,
 	}
@@ -62,7 +63,7 @@ func (api *FnApi) Login(username, password string, device DeviceInfo) (*UserInfo
 	}
 
 	// 解析返回
-	authResp := &LoginResp{}
+	authResp := &cache.LoginResp{}
 	if err := json.NewDecoder(resp.Body).Decode(authResp); err != nil {
 		logger.Errorf("decode auth resp failed:%s", err)
 		return nil, err
@@ -73,7 +74,7 @@ func (api *FnApi) Login(username, password string, device DeviceInfo) (*UserInfo
 		return nil, errors.New("auth response missing token or user id")
 	}
 
-	return &UserInfo{
+	return &cache.UserInfo{
 		UserId: authResp.User.Id,
 		Token:  authResp.AccessToken,
 	}, nil

@@ -1,5 +1,5 @@
 server:
-  listen: "0.0.0.0:8005"
+  listen: "0.0.0.0:22345"
 
 target:
   host: "10.0.0.115"
@@ -7,8 +7,8 @@ target:
   https: false
 
 user:
-  username: ""
-  password: ""
+  username: "test"
+  password: "test"
 
 log:
-  level: "info"
+  level: 1

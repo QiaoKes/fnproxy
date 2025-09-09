@@ -17,14 +17,13 @@ import (
 // Server 代理服务器
 type Server struct {
 	config   *config.Config
-	logger   *zap.Logger
 	registry *Registry
 	proxy    *httputil.ReverseProxy
 	engine   *gin.Engine
 }
 
 // NewServer 创建新的代理服务器
-func NewServer(cfg *config.Config, logger *zap.Logger) *Server {
+func NewServer(cfg *config.Config) *Server {
 	// 创建目标URL
 	targetURL := &url.URL{
 		Scheme: "http",
@@ -44,7 +43,7 @@ func NewServer(cfg *config.Config, logger *zap.Logger) *Server {
 	}
 
 	// 设置Gin模式
-	if cfg.Log.Level == "debug" {
+	if logger.GetLevel() == logger.DEBUG {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -63,7 +62,6 @@ func NewServer(cfg *config.Config, logger *zap.Logger) *Server {
 
 	server := &Server{
 		config:   cfg,
-		logger:   logger,
 		registry: NewRegistry(),
 		proxy:    proxy,
 		engine:   engine,

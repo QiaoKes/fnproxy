@@ -72,6 +72,13 @@ func SetLevel(level LogLevel) {
 	std.minLevel = level
 }
 
+// 获取当前日志级别
+func GetLevel() LogLevel {
+	std.mu.Lock()
+	defer std.mu.Unlock()
+	return std.minLevel
+}
+
 // 启用/禁用颜色输出
 func SetColor(enabled bool) {
 	std.mu.Lock()
@@ -161,10 +168,10 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	if l.color && (os.Getenv("TERM") != "dumb") {
 		color := levelColors[level]
 		if callerInfo != "" {
-			l.logger.Printf("%s %s%s%-5s%s [%s] %s",
+			l.logger.Printf("%s %s%-5s%s [%s] %s",
 				now, color, levelStr, resetColor, callerInfo, message)
 		} else {
-			l.logger.Printf("%s %s%s%-5s%s %s",
+			l.logger.Printf("%s %s%-5s%s %s",
 				now, color, levelStr, resetColor, message)
 		}
 	} else {
