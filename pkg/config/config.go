@@ -2,6 +2,7 @@ package config
 
 import (
 	"fnproxy/pkg/logger"
+
 	"github.com/spf13/viper"
 )
 
@@ -40,14 +41,17 @@ func Load() (*Config, error) {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
-	// 设置默认值
-	//viper.SetDefault("server.listen", "0.0.0.0:2345")
-	//viper.SetDefault("target.host", "10.0.0.115")
-	//viper.SetDefault("target.port", 8005)
-	//viper.SetDefault("log.level", "info")
-	//viper.SetDefault("timeout.read", "30s")
-	//viper.SetDefault("timeout.write", "30s")
-	//viper.SetDefault("timeout.idle", "120s")
+	// 启用环境变量支持
+	viper.AutomaticEnv()
+
+	// 绑定环境变量
+	viper.BindEnv("server.listen", "SERVER_LISTEN")
+	viper.BindEnv("target.host", "TARGET_HOST")
+	viper.BindEnv("target.port", "TARGET_PORT")
+	viper.BindEnv("target.https", "TARGET_HTTPS")
+	viper.BindEnv("user.username", "USER_USERNAME")
+	viper.BindEnv("user.password", "USER_PASSWORD")
+	viper.BindEnv("log.level", "LOG_LEVEL")
 
 	if err := viper.ReadInConfig(); err != nil {
 		logger.Errorf("Error reading config file, %s", err)

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  fnproxy:
+    image: ghcr.io/qiaokes/fnproxy:latest
+    container_name: fnproxy
+    ports:
+      - "2345:2345"
+    network_mode: host
+    environment:
+      - SERVER_LISTEN=0.0.0.0:2345
+      - TARGET_HOST=127.0.0.1
+      - TARGET_PORT=8005
+      - TARGET_HTTPS=false
+      - USER_USERNAME=test
+      - USER_PASSWORD=test
+      - LOG_LEVEL=info
+    restart: unless-stopped
