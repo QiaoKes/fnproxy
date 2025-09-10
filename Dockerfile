@@ -31,7 +31,7 @@ ENV SERVER_LISTEN="0.0.0.0:2345"
 ENV TARGET_HOST="10.0.0.115"
 ENV TARGET_PORT="8005"
 ENV TARGET_HTTPS="false"
-ENV LOG_LEVEL="info"
+ENV LOG_LEVEL=1
 
 # Copy the binary from builder
 COPY --from=builder /app/fnproxy /fnproxy

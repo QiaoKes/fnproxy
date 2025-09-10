@@ -1,16 +1,33 @@
-package emby
+package common
 
 const (
 	EmbyAuthPath   = "/emby/Users/AuthenticateByName"
 	SystemInfoPath = "/emby/System/Info"
+
 	PageViewPath   = "/emby/Users/:userid/Items"
 	ArtPicturePath = "/emby/Items/:itemid/Images/Backdrop/:index" // + ?maxWidth=xxx&maxHeight=xxx&tag=xxx
+
+	ItemSimilarPath     = "/emby/Items/:itemid/Similar" // 相似影视
+	AlbumsSimilarPath   = "/emby/Albums/:itemid/Similar"
+	ArtistsSimilarPath  = "/emby/Artists/:itemid/Similar"
+	MoviesSimilarPath   = "/emby/Movies/:itemid/Similar"
+	ShowsSimilarPath    = "/emby/Shows/:itemid/Similar"
+	TrailersSimilarPath = "/emby/Trailers/:itemid/Similar"
+
+	UserItemsPath = "/emby/Users/:userid/Items/:itemid" // 用户影视列表
 )
 
 const (
 	EmbyAuthHeader  = "X-Emby-Authorization"
 	EmbyTokenHeader = "X-Emby-Token"
 )
+
+// SimilarResp 相似影视响应体
+type SimilarResp struct {
+	Items            []any `json:"Items"`
+	TotalRecordCount int   `json:"TotalRecordCount"`
+	StartIndex       int   `json:"StartIndex"`
+}
 
 // UserInfo Emby用户信息
 type UserInfo struct {

@@ -24,7 +24,7 @@ type TargetConfig struct {
 }
 
 type LogConfig struct {
-	Level string `destructure:"level"`
+	Level int `destructure:"level"`
 }
 
 type UserConfig struct {
