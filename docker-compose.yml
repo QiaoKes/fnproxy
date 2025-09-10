@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   fnproxy:
-    image: ghcr.io/qiaokes/fnproxy:latest
+    image: qiaokes/fnproxy:latest
     container_name: fnproxy
     ports:
       - "2345:2345"
