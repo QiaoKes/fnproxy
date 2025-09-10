@@ -84,6 +84,22 @@ func (s *Server) setupRoutes() {
 	s.engine.Any("/*path", s.handleRequest)
 }
 
+// isStreamContent 判断请求/响应是否为流式资源（非 JSON）
+func (s *Server) isStreamContent(ctx *Context) bool {
+	// 如果请求带 Range 头，认为是流式资源
+	if ctx.Request.Header.Get("Range") != "" {
+		return true
+	}
+
+	// 如果响应头存在 Content-Type，并且不是 application/json，也认为是流式资源
+	contentType := ctx.Response.Header().Get("Content-Type")
+	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
+		return true
+	}
+
+	return false
+}
+
 // handleRequest 处理请求
 func (s *Server) handleRequest(c *gin.Context) {
 	defer func() {
@@ -108,13 +124,19 @@ func (s *Server) handleRequest(c *gin.Context) {
 	method := c.Request.Method
 
 	// 判断是否视频流
-	isStreamLink := c.Request.Header.Get("Range") != ""
+	isStreamLink := s.isStreamContent(ctx)
 
 	// 获取全局拦截器
 	globalInterceptors := s.registry.GetGlobalInterceptors()
 
-	// 检查是否有匹配的拦截器
-	interceptor := s.registry.GetInterceptor(method, ctx.Path)
+	// 检查是否有匹配的拦截器并获取路径参数
+	interceptor, pathParams := s.registry.GetInterceptorWithParams(method, ctx.Path)
+
+	// 将路径参数设置到上下文中
+	if pathParams != nil {
+		ctx.PathParams = pathParams
+	}
+
 	var hasAfterResponse bool
 
 	// 执行全局请求前拦截器
@@ -201,25 +223,25 @@ func (s *Server) processResponse(ctx *Context, interceptors []*Interceptor) {
 // Register 注册路由
 func (s *Server) Register(method, path string, callback PreRequestFunc) {
 	s.registry.RegisterPreRequest(method, path, callback)
-	logger.Infof("Registered router:%s", path)
+	logger.Infof("Registered method:%s router:%s", method, path)
 }
 
 // RegisterPreRequest 注册请求前处理器
 func (s *Server) RegisterPreRequest(method, path string, preReq PreRequestFunc) {
 	s.registry.RegisterPreRequest(method, path, preReq)
-	logger.Info("Registered pre-request interceptor", zap.String("path", path))
+	logger.Infof("Registered pre request method:%s router:%s", method, path)
 }
 
 // RegisterAfterResponse 注册响应后处理器
 func (s *Server) RegisterAfterResponse(method, path string, afterResp AfterResponseFunc) {
 	s.registry.RegisterAfterResponse(method, path, afterResp)
-	logger.Info("Registered after-response interceptor", zap.String("path", path))
+	logger.Infof("Registered after response method:%s router:%s", method, path)
 }
 
 // RegisterBoth 注册请求前和响应后处理器
 func (s *Server) RegisterBoth(method, path string, preReq PreRequestFunc, afterResp AfterResponseFunc) {
 	s.registry.RegisterBoth(method, path, preReq, afterResp)
-	logger.Info("Registered both pre-request and after-response interceptors", zap.String("path", path))
+	logger.Infof("Registered both request and response method:%s router:%s", method, path)
 }
 
 // RegisterGlobalBoth 注册全局请求处理器
@@ -234,9 +256,7 @@ func (s *Server) RegisterGlobalBoth(preReq PreRequestFunc, afterResp AfterRespon
 
 // Start 启动服务器
 func (s *Server) Start() error {
-	logger.Info("Starting proxy server",
-		zap.String("listen", s.config.Server.Listen),
-		zap.String("target", fmt.Sprintf("%s:%d", s.config.Target.Host, s.config.Target.Port)))
+	logger.Infof("Starting proxy server:%s, forwarding to target %s:%d", s.config.Server.Listen, s.config.Target.Host, s.config.Target.Port)
 
 	return s.engine.Run(s.config.Server.Listen)
 }

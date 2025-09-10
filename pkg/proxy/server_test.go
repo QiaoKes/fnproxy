@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-
-	"go.uber.org/zap"
 )
 
 // 在测试中使用的 Recorder，增加 CloseNotify 方法以兼容 gin/httputil 的断言
@@ -57,10 +55,10 @@ func TestServer_PreRequestCancel(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.ServerConfig{Listen: "127.0.0.1:0"},
 		Target: config.TargetConfig{Host: host, Port: port},
-		Log:    config.LogConfig{Level: "debug"},
+		Log:    config.LogConfig{Level: 0},
 	}
 
-	srv := NewServer(cfg, zap.NewNop())
+	srv := NewServer(cfg)
 
 	// 注册一个在请求前直接取消并返回 403 的拦截器
 	srv.RegisterPreRequest("GET", "/cancel", func(ctx *Context) InterceptorResult {
@@ -113,10 +111,10 @@ func TestServer_AfterResponseModify(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.ServerConfig{Listen: "127.0.0.1:0"},
 		Target: config.TargetConfig{Host: host, Port: port},
-		Log:    config.LogConfig{Level: "debug"},
+		Log:    config.LogConfig{Level: 0},
 	}
 
-	srv := NewServer(cfg, zap.NewNop())
+	srv := NewServer(cfg)
 
 	// 注册响应后处理器，修改响应体
 	srv.RegisterAfterResponse("PATCH", "/modify", func(ctx *Context) InterceptorResult {
@@ -127,7 +125,7 @@ func TestServer_AfterResponseModify(t *testing.T) {
 		return Continue
 	})
 
-	req := httptest.NewRequest("GET", "/modify", nil)
+	req := httptest.NewRequest("PATCH", "/modify", nil)
 	rec := &closeNotifyRecorder{httptest.NewRecorder()}
 
 	srv.GetEngine().ServeHTTP(rec, req)
@@ -173,12 +171,12 @@ func TestServer_PreRequestModifyHeadersAndBody(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.ServerConfig{Listen: "127.0.0.1:0"},
 		Target: config.TargetConfig{Host: host, Port: port},
-		Log:    config.LogConfig{Level: "debug"},
+		Log:    config.LogConfig{Level: 0},
 	}
 
-	srv := NewServer(cfg, zap.NewNop())
+	srv := NewServer(cfg)
 
-	srv.RegisterPreRequest("PATCH", "/premodify", func(ctx *Context) InterceptorResult {
+	srv.RegisterPreRequest("POST", "/premodify", func(ctx *Context) InterceptorResult {
 		// 修改请求头与请求体
 		ctx.Headers.Set("X-Injected", "yes")
 		ctx.RequestHelper.SetBody([]byte("replaced"))
@@ -231,10 +229,10 @@ func TestServer_AfterResponseModifyHeadersAndBody(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.ServerConfig{Listen: "127.0.0.1:0"},
 		Target: config.TargetConfig{Host: host, Port: port},
-		Log:    config.LogConfig{Level: "debug"},
+		Log:    config.LogConfig{Level: 0},
 	}
 
-	srv := NewServer(cfg, zap.NewNop())
+	srv := NewServer(cfg)
 
 	srv.RegisterAfterResponse("PATCH", "/aftermodify", func(ctx *Context) InterceptorResult {
 		// 读取并修改响应头与体
@@ -245,7 +243,7 @@ func TestServer_AfterResponseModifyHeadersAndBody(t *testing.T) {
 		return Continue
 	})
 
-	req := httptest.NewRequest("GET", "/aftermodify", nil)
+	req := httptest.NewRequest("PATCH", "/aftermodify", nil)
 	rec := &closeNotifyRecorder{httptest.NewRecorder()}
 
 	srv.GetEngine().ServeHTTP(rec, req)

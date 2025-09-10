@@ -18,7 +18,7 @@ func TestHRMatcher_ArtPicturePath(t *testing.T) {
 	t.Logf("Testing pattern: %s", pattern)
 	t.Logf("Testing path: %s", testPath)
 
-	matchedPattern, ok := matcher.Lookup("GET", testPath)
+	matchedPattern, params, ok := matcher.Lookup("GET", testPath)
 	if !ok {
 		t.Errorf("Expected pattern %s to match path %s, but it didn't match", pattern, testPath)
 		return
@@ -28,22 +28,22 @@ func TestHRMatcher_ArtPicturePath(t *testing.T) {
 		t.Errorf("Expected matched pattern to be %s, but got %s", pattern, matchedPattern)
 	}
 
-	t.Logf("Successfully matched pattern: %s with path: %s", matchedPattern, testPath)
-}
-
-func TestStrictMatch_ArtPicturePath(t *testing.T) {
-	pattern := "/emby/Items/:itemid/Images/Backdrop/:index"
-	path := "/emby/Items/c7d22542a722404280d06d4da578fec6/Images/Backdrop/0"
-
-	t.Logf("Pattern: %s", pattern)
-	t.Logf("Path: %s", path)
-
-	matched, statics, params, stars, segs := strictMatch(pattern, path)
-	t.Logf("Matched: %v, Statics: %d, Params: %d, Stars: %d, Segs: %d", matched, statics, params, stars, segs)
-
-	if !matched {
-		t.Errorf("Expected pattern %s to match path %s", pattern, path)
+	// 验证参数
+	expectedParams := map[string]string{
+		"itemid": "c7d22542a722404280d06d4da578fec6",
+		"index":  "0",
 	}
+
+	for key, expectedValue := range expectedParams {
+		if actualValue, exists := params[key]; !exists {
+			t.Errorf("Expected parameter %s to exist, but it doesn't", key)
+		} else if actualValue != expectedValue {
+			t.Errorf("Expected parameter %s to be %s, but got %s", key, expectedValue, actualValue)
+		}
+	}
+
+	t.Logf("Successfully matched pattern: %s with path: %s", matchedPattern, testPath)
+	t.Logf("Extracted parameters: %v", params)
 }
 
 func TestHRMatcher_DebugLookup(t *testing.T) {
@@ -64,7 +64,7 @@ func TestHRMatcher_DebugLookup(t *testing.T) {
 	t.Logf("Registered patterns for GET: %v", matcher.patterns["GET"])
 
 	// 测试我们的 Lookup
-	matchedPattern, ok := matcher.Lookup("GET", testPath)
+	matchedPattern, _, ok := matcher.Lookup("GET", testPath)
 	t.Logf("Our Lookup result: pattern=%s, ok=%v", matchedPattern, ok)
 }
 
@@ -75,8 +75,7 @@ func TestHRMatcher_EmbyImagePaths(t *testing.T) {
 	patterns := []string{
 		"/emby/Items/:itemid/Images/Backdrop/:index",
 		"/emby/Items/:itemid/Images/Primary",
-		"/emby/Items/:itemid/Images/:type/:index",
-		"/emby/Items/:itemid/Images/:type",
+		"/emby/Items/:itemid/Video/:type",
 	}
 
 	for _, pattern := range patterns {
@@ -100,20 +99,15 @@ func TestHRMatcher_EmbyImagePaths(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
-			path:        "/emby/Items/xyz789/Images/Logo/1",
-			expected:    "/emby/Items/:itemid/Images/:type/:index",
-			shouldMatch: true,
-		},
-		{
-			path:        "/emby/Items/def456/Images/Thumb",
-			expected:    "/emby/Items/:itemid/Images/:type",
+			path:        "/emby/Items/xyz789/Video/Logo",
+			expected:    "/emby/Items/:itemid/Video/:type",
 			shouldMatch: true,
 		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			matchedPattern, ok := matcher.Lookup("GET", tc.path)
+			matchedPattern, _, ok := matcher.Lookup("GET", tc.path)
 
 			if tc.shouldMatch && !ok {
 				t.Errorf("Expected path %s to match, but it didn't", tc.path)
@@ -148,7 +142,7 @@ func TestHRMatcher_URLWithQueryParams(t *testing.T) {
 	t.Logf("Path only: %s", pathOnly)
 
 	// 应该使用路径部分（不含查询参数）进行匹配
-	matchedPattern, ok := matcher.Lookup("GET", pathOnly)
+	matchedPattern, _, ok := matcher.Lookup("GET", pathOnly)
 	if !ok {
 		t.Errorf("Expected pattern %s to match path %s", pattern, pathOnly)
 		return

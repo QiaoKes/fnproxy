@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"fnproxy/pkg/logger"
 
 	"github.com/spf13/viper"
@@ -21,6 +22,7 @@ type TargetConfig struct {
 	Host  string `destructure:"host"`
 	Port  int    `destructure:"port"`
 	Https bool   `destructure:"https"`
+	Url   string
 }
 
 type LogConfig struct {
@@ -71,6 +73,12 @@ func Load() (*Config, error) {
 	if err := viper.Unmarshal(cfg); err != nil {
 		logger.Errorf("Unable to decode into struct, %v", err)
 		return nil, err
+	}
+
+	if cfg.Target.Https {
+		cfg.Target.Url = fmt.Sprintf("https://%s:%d", cfg.Target.Host, cfg.Target.Port)
+	} else {
+		cfg.Target.Url = fmt.Sprintf("http://%s:%d", cfg.Target.Host, cfg.Target.Port)
 	}
 
 	globalCfg = cfg

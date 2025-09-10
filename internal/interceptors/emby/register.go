@@ -18,6 +18,7 @@ func RegisterInterceptors(server *proxy.Server) {
 	// 页面浏览相关
 	server.RegisterPreRequest(http.MethodGet, common.PageViewPath, handler.NewPageViewInterceptor().ViewIntercept)
 	server.RegisterPreRequest(http.MethodGet, common.ArtPicturePath, handler.NewPageViewInterceptor().ArtPictureIntercept)
+	server.RegisterAfterResponse(http.MethodGet, common.VideoSummaryPath, handler.NewPageViewInterceptor().VideoSummaryAfterIntercept)
 
 	// 处理相似影视请求
 	server.Register(http.MethodGet, common.ItemSimilarPath, handler.GetSimilar)

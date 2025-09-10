@@ -152,12 +152,6 @@ server.RegisterPreRequest(http.MethodGet, "/emby/Items/:itemid/Images/Backdrop/:
     return proxy.Continue
 })
 
-// 混合静态和参数路径
-server.RegisterPreRequest(http.MethodGet, "/api/users/:userid/items/:itemid", func(ctx *proxy.Context) proxy.InterceptorResult {
-    // 处理 /api/users/456/items/789 等路径
-    return proxy.Continue
-})
-
 // 通配方法匹配（*）
 server.RegisterAnyMethodPreRequest("/api/logs", func(ctx *proxy.Context) proxy.InterceptorResult {
     // 对所有 HTTP 方法的 /api/logs 路径生效

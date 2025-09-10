@@ -39,6 +39,9 @@ type Context struct {
 	RequestHelper
 	ResponseHelper
 
+	// 路径参数
+	PathParams map[string]string
+
 	// 响应处理相关
 	responseBody    *bytes.Buffer
 	originalWriter  gin.ResponseWriter
@@ -54,6 +57,7 @@ func NewContext(c *gin.Context) *Context {
 		Path:           c.Request.URL.Path,
 		Method:         c.Request.Method,
 		originalWriter: c.Writer,
+		PathParams:     make(map[string]string),
 	}
 
 	ctx.Headers = HeaderHelper{ctx: ctx}
@@ -89,4 +93,37 @@ func (ctx *Context) FlushResponse() {
 			ctx.originalWriter.Write(ctx.interceptWriter.body.Bytes())
 		}
 	}
+}
+
+// GetPathParam 获取路径参数
+func (ctx *Context) GetPathParam(key string) string {
+	if ctx.PathParams == nil {
+		return ""
+	}
+	return ctx.PathParams[key]
+}
+
+// GetPathParamWithDefault 获取路径参数，如果不存在则返回默认值
+func (ctx *Context) GetPathParamWithDefault(key, defaultValue string) string {
+	if value := ctx.GetPathParam(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+// HasPathParam 检查是否存在指定的路径参数
+func (ctx *Context) HasPathParam(key string) bool {
+	if ctx.PathParams == nil {
+		return false
+	}
+	_, exists := ctx.PathParams[key]
+	return exists
+}
+
+// GetAllPathParams 获取所有路径参数
+func (ctx *Context) GetAllPathParams() map[string]string {
+	if ctx.PathParams == nil {
+		return make(map[string]string)
+	}
+	return ctx.PathParams
 }
