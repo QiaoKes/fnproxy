@@ -59,33 +59,33 @@ func (r *Registry) RegisterBoth(method, path string, preReq PreRequestFunc, afte
 	r.matcher.Register(method, path)
 }
 
-// GetInterceptor 获取路径和方法对应的拦截器（支持 :param/*any 路径模式）
-func (r *Registry) GetInterceptor(method, path string) *Interceptor {
+// GetInterceptorWithParams 获取路径和方法对应的拦截器以及路径参数（支持 :param/*any 路径模式）
+func (r *Registry) GetInterceptorWithParams(method, path string) (*Interceptor, map[string]string) {
 	method = strings.ToUpper(strings.TrimSpace(method))
 
 	// 1) 精确匹配：METHOD:/exact/path
 	if ic := r.interceptors[r.makeKey(method, path)]; ic != nil {
-		return ic
+		return ic, nil
 	}
 	// 2) 通配方法 + 精确路径：*:/exact/path
 	if ic := r.interceptors[r.makeKey("*", path)]; ic != nil {
-		return ic
+		return ic, nil
 	}
 
-	// 3) 用 httprouter 解析路径，拿到“命中的模式字符串”
+	// 3) 用 httprouter 解析路径，拿到"命中的模式字符串"和参数
 	if r.matcher != nil {
-		if pat, ok := r.matcher.Lookup(method, path); ok {
+		if pat, params, ok := r.matcher.Lookup(method, path); ok {
 			// 3.1 同方法 + 模式
 			if ic := r.interceptors[r.makeKey(method, pat)]; ic != nil {
-				return ic
+				return ic, params
 			}
 			// 3.2 通配方法 + 模式
 			if ic := r.interceptors[r.makeKey("*", pat)]; ic != nil {
-				return ic
+				return ic, params
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // GetAllInterceptors 获取所有拦截器
@@ -96,18 +96,6 @@ func (r *Registry) GetAllInterceptors() map[string]*Interceptor {
 // GetGlobalInterceptors 获取全局拦截器
 func (r *Registry) GetGlobalInterceptors() []*Interceptor {
 	return r.globalInterceptors
-}
-
-// HasPreRequest 检查是否有请求前处理器
-func (r *Registry) HasPreRequest(method, path string) bool {
-	interceptor := r.GetInterceptor(method, path)
-	return interceptor != nil && interceptor.PreRequest != nil
-}
-
-// HasAfterResponse 检查是否有响应后处理器
-func (r *Registry) HasAfterResponse(method, path string) bool {
-	interceptor := r.GetInterceptor(method, path)
-	return interceptor != nil && interceptor.AfterResponse != nil
 }
 
 // RegisterAnyMethod 为任何HTTP方法注册拦截器

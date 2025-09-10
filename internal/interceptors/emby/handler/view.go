@@ -33,7 +33,8 @@ func (pi *PageViewInterceptor) ArtPictureIntercept(ctx *proxy.Context) proxy.Int
 	logger.Infof("Intercepting Emby art picture request before, path:%s, args:%s method:%s", utils.JsonPrint(ctx.Path), ctx.RequestHelper.GetQuery(), ctx.Method)
 
 	path := ctx.Path
-	path = strings.Replace(path, "Backdrop/0", "Primary", 1)
+	index := ctx.GetPathParamWithDefault("index", "0")
+	path = strings.Replace(path, "Backdrop/"+index, "Primary", 1)
 
 	ctx.RequestHelper.SetPath(path)
 	logger.Info("Successfully modified Emby art picture request")

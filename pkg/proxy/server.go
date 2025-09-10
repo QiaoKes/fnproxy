@@ -113,8 +113,14 @@ func (s *Server) handleRequest(c *gin.Context) {
 	// 获取全局拦截器
 	globalInterceptors := s.registry.GetGlobalInterceptors()
 
-	// 检查是否有匹配的拦截器
-	interceptor := s.registry.GetInterceptor(method, ctx.Path)
+	// 检查是否有匹配的拦截器并获取路径参数
+	interceptor, pathParams := s.registry.GetInterceptorWithParams(method, ctx.Path)
+
+	// 将路径参数设置到上下文中
+	if pathParams != nil {
+		ctx.PathParams = pathParams
+	}
+
 	var hasAfterResponse bool
 
 	// 执行全局请求前拦截器
